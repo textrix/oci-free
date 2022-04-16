@@ -27,7 +27,7 @@ function get_TID {
 	echo $(ini_get_value $CONFIG $PROFILE tenancy)
 }
 
-function instance-list { # $1:Profile $2:TID
+function instance-list {
 	local PROFILE=$1
 	local TID=$2
 	echo "[$PROFILE]"
@@ -37,13 +37,14 @@ function instance-list { # $1:Profile $2:TID
 
 CONFIG=~/.oci/config
 INPUT_PROFILE=$1
+INPUT_COMMAND=$2
 
 declare -a PROFILE_ARRAY="$(ini_get_sections $CONFIG)"; #declare -p PROFILE_ARRAY;
 
 for PROFILE in ${PROFILE_ARRAY[@]}; do
 	if echo $PROFILE | grep -q -w $INPUT_PROFILE ; then
 		TID=$(get_TID $PROFILE)
-		eval "$2 $PROFILE $TID"
+		eval "$INPUT_COMMAND $PROFILE $TID"
 	fi
 done
 
