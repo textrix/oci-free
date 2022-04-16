@@ -1,5 +1,7 @@
 #!/bin/bash
 
+DEBUG=
+
 function ini_get_sections {
 	local INI_FILE=$1
 	readarray -t array < <(grep '^\[' $INI_FILE | uniq | tr -d '\[' | tr -d '\]')
@@ -28,8 +30,13 @@ function get_TID {
 }
 
 function oci-help {
-	echo "Command List:"
-	declare -F | awk '{print $NF}' | sort | grep -v "^_" | grep "oci-" | sed 's/^oci-//'
+	echo "Usage: $0 <profile> <command>"
+	echo 
+	echo "Example:"
+	echo -e "\t$0 SEL[0-1]\|PHX[2-3] instance-list"
+	echo 
+	echo "Commands:"
+	declare -F | awk '{print $NF}' | sort | grep -v "^_" | grep "oci-" | sed 's/^oci-/\t/'
 }
 
 function oci-instance-list {
@@ -40,10 +47,10 @@ function oci-instance-list {
 }
 
 CONFIG=~/.oci/config
-INPUT_PROFILE=$1
-INPUT_COMMAND=$2
+INPUT_PROFILE=$1; shift;
+INPUT_COMMAND=$1; shift;
 
-declare -a PROFILE_ARRAY="$(ini_get_sections $CONFIG)"; #declare -p PROFILE_ARRAY;
+declare -a PROFILE_ARRAY="$(ini_get_sections $CONFIG)"; [ DEBUG ] && declare -p PROFILE_ARRAY;
 
 for PROFILE in ${PROFILE_ARRAY[@]}; do
 	if echo $PROFILE | grep -q -w $INPUT_PROFILE ; then
