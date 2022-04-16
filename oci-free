@@ -27,13 +27,17 @@ function get_TID {
 	echo $(ini_get_value $CONFIG $PROFILE tenancy)
 }
 
-function instance-list {
+function oci-help {
+	echo "Command List:"
+	declare -F | awk '{print $NF}' | sort | grep -v "^_" | grep "oci-" | sed 's/^oci-//'
+}
+
+function oci-instance-list {
 	local PROFILE=$1
 	local TID=$2
 	echo "[$PROFILE]"
 	oci --profile $PROFILE compute instance list -c $TID --all | jq -r '.data[] | ."display-name"+","+."id"'
 }
-
 
 CONFIG=~/.oci/config
 INPUT_PROFILE=$1
@@ -44,7 +48,7 @@ declare -a PROFILE_ARRAY="$(ini_get_sections $CONFIG)"; #declare -p PROFILE_ARRA
 for PROFILE in ${PROFILE_ARRAY[@]}; do
 	if echo $PROFILE | grep -q -w $INPUT_PROFILE ; then
 		TID=$(get_TID $PROFILE)
-		eval "$INPUT_COMMAND $PROFILE $TID"
+		eval "oci-$INPUT_COMMAND $PROFILE $TID"
 	fi
 done
 
