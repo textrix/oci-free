@@ -1,0 +1,49 @@
+#!/bin/bash
+
+function ini_get_sections {
+	local INI_FILE=$1
+	readarray -t array < <(grep '^\[' $INI_FILE | uniq | tr -d '\[' | tr -d '\]')
+	local result=$(declare -p array)
+	echo "${result#*=}"
+}
+
+function ini_get_value {
+	local INT_FILE=$1
+	local SECTION=$2
+	local KEY=$3
+	cat $INT_FILE				| `# read all from the config file`				\
+	sed -n -e "/\[$SECTION\]/,\$p"		| `# output all the rest from the desired section matched`	\
+	tail -n +2				| `# delete the first line (the desired section)`		\
+	sed -e "/^\[.*\]/q"			| `# find the next SECTION and discard all the rest from there`	\
+	grep "^[[:space:]]*$KEY[[:space:]]*\="	| `# find all lines with desired KEY separated by equal sign.`	\
+						  `# spaces around key name are not affected`			\
+	tail -n 1				| `# choose the last`						\
+	awk -F= '{print $2}'			| `# separate by the equal sign, get the value of 2nd position`	\
+	xargs					  `# trim spaces on either side`
+}
+
+function get_TID {
+	local PROFILE=$1
+	echo $(ini_get_value $CONFIG $PROFILE tenancy)
+}
+
+function instance-list { # $1:Profile $2:TID
+	local PROFILE=$1
+	local TID=$2
+	echo "[$PROFILE]"
+	oci --profile $PROFILE compute instance list -c $TID --all | jq -r '.data[] | ."display-name"+","+."id"'
+}
+
+
+CONFIG=~/.oci/config
+INPUT_PROFILE=$1
+
+declare -a PROFILE_ARRAY="$(ini_get_sections $CONFIG)"; #declare -p PROFILE_ARRAY;
+
+for PROFILE in ${PROFILE_ARRAY[@]}; do
+	if echo $PROFILE | grep -q -w $INPUT_PROFILE ; then
+		TID=$(get_TID $PROFILE)
+		eval "$2 $PROFILE $TID"
+	fi
+done
+
