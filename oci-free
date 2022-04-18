@@ -5,8 +5,8 @@ set -o noglob
 PIDS=""
 RESULT=0
 
-DEBUG=true
-VERBOSE=true
+#DEBUG=true
+#VERBOSE=true
 
 function ini_get_sections {
 	local INI_FILE=$1
@@ -79,6 +79,37 @@ function oci-ip-list {
 	done
 }
 
+function _oci-ipv6 {
+	local PROFILE=$1; local TID=$2; local IID=$3; local VNIC_ID=$4; local SUBNET_ID=$5
+	local CMD="oci --profile $PROFILE network ipv6 list --vnic-id $VNIC_ID --subnet-id $SUBNET_ID | jq -r '.data[] | .\"ip-address\"'"
+	[ $VERBOSE ] && echo $CMD >&2;
+	echo $PROFILE,$INAME,$(eval $CMD)
+}
+
+function oci-ipv6-list {
+	local PROFILE=$1; local TID=$2; local INPUT_INAME=$3
+	local SUB_PIDS=""
+	[ -z $INPUT_INAME ] && INPUT_INAME='.'
+	readarray -t IID_ARRAY <<<"$(oci-instance-list $PROFILE $TID)"; [ $DEBUG ] && declare -p IID_ARRAY >&2
+
+	for line in ${IID_ARRAY[@]}; do
+		[ $DEBUG ] && echo "$FUNCNAME: $line" >&2
+		local INAME=$(echo $line | awk -F, '{print $2}')
+		local IID=$(echo $line | awk -F, '{print $3}')
+		local VNIC_DATA=$(eval "oci --profile $PROFILE compute instance list-vnics -c $TID --instance-id $IID")
+		local VNIC_ID=$(echo $VNIC_DATA | jq -r '.data[] | .id')
+		local SUBNET_ID=$(echo $VNIC_DATA | jq -r '.data[] | ."subnet-id"')
+		if echo $INAME | grep -q $INPUT_INAME; then
+			eval "_oci-ipv6 $PROFILE $TID $IID $VNIC_ID $SUBNET_ID" &
+			SUB_PIDS="$SUB_PIDS $!"
+		fi 
+	done
+
+	for pid in $SUB_PIDS; do
+		wait $pid
+	done
+}
+
 function oci-change-name {
 	local PROFILE=$1; local TID=$2; local INPUT_INAME=$3; local INPUT_DNAME=$4
 	[ -z $INPUT_INAME ] && INPUT_INAME='.'
@@ -134,4 +165,5 @@ fi
 
 # TODO: multi, single command? oci-multi-???
 # TODO: dry-run option?
-
+# TODO: unknown command --> help
+# TODO: create, assign ipv4,6 address
