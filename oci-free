@@ -83,7 +83,12 @@ function _oci-ipv6 {
 	local PROFILE=$1; local TID=$2; local IID=$3; local VNIC_ID=$4; local SUBNET_ID=$5
 	local CMD="oci --profile $PROFILE network ipv6 list --vnic-id $VNIC_ID --subnet-id $SUBNET_ID | jq -r '.data[] | .\"ip-address\"'"
 	[ $VERBOSE ] && echo $CMD >&2;
-	echo $PROFILE,$INAME,$(eval $CMD)
+	local RESULT=$(eval $CMD)
+	if [ -z $RESULT ]; then
+		RESULT=$(oci --profile $PROFILE network vnic assign-ipv6 --vnic-id $VNIC_ID | jq -r '.data."ip-address"')
+	fi
+	echo $PROFILE,$INAME,$RESULT
+
 }
 
 function oci-ipv6-list {
