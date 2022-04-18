@@ -5,7 +5,7 @@ set -o noglob
 PIDS=""
 RESULT=0
 
-#DEBUG=true
+DEBUG=true
 VERBOSE=true
 
 function ini_get_sections {
@@ -79,13 +79,29 @@ function oci-ip-list {
 	done
 }
 
+function oci-change-name {
+	local PROFILE=$1; local TID=$2; local INPUT_INAME=$3; local INPUT_DNAME=$4
+	[ -z $INPUT_INAME ] && INPUT_INAME='.'
+	[ -z $INPUT_DNAME ] && exit # TODO: error message
+	readarray -t IID_ARRAY <<<"$(oci-instance-list $PROFILE $TID)"; [ $DEBUG ] && declare -p IID_ARRAY >&2
+	for line in ${IID_ARRAY[@]}; do
+		[ $DEBUG ] && echo "$FUNCNAME: $line" >&2
+		local INAME=$(echo $line | awk -F, '{print $2}')
+		local IID=$(echo $line | awk -F, '{print $3}')
+		if [ "$INAME" ==  "$INPUT_INAME" ]; then
+			local CMD="oci --profile $PROFILE compute instance update --instance-id $IID --display-name $INPUT_DNAME | jq -r '.data.\"display-name\"'"
+			[ $VERBOSE ] && echo $CMD >&2;
+			echo $PROFILE,$INAME,$(eval $CMD)
+		fi 
+	done
+}
+
 function oci-ip-create {
 #     export compartment_id=<substitute-value-of-compartment_id> # https://docs.cloud.oracle.com/en-us/iaas/tools/oci-cli/latest/oci_cli_docs/cmdref/network/public-ip/create.html#cmdoption-compartment-id
 #    export lifetime=<substitute-value-of-lifetime> # https://docs.cloud.oracle.com/en-us/iaas/tools/oci-cli/latest/oci_cli_docs/cmdref/network/public-ip/create.html#cmdoption-lifetime
-
 #    public_ip_id=$(oci network public-ip create --compartment-id $compartment_id --lifetime $lifetime --query data.id --raw-output)
-
 #    oci network public-ip update --public-ip-id $public_ip_id
+	exit
 }
 
 CONFIG=~/.oci/config
