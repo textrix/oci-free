@@ -6,7 +6,7 @@ PIDS=""
 RESULT=0
 
 #DEBUG=true
-#VERBOSE=true
+VERBOSE=true
 
 function ini_get_sections {
 	local INI_FILE=$1
@@ -79,6 +79,15 @@ function oci-ip-list {
 	done
 }
 
+function oci-ip-create {
+#     export compartment_id=<substitute-value-of-compartment_id> # https://docs.cloud.oracle.com/en-us/iaas/tools/oci-cli/latest/oci_cli_docs/cmdref/network/public-ip/create.html#cmdoption-compartment-id
+#    export lifetime=<substitute-value-of-lifetime> # https://docs.cloud.oracle.com/en-us/iaas/tools/oci-cli/latest/oci_cli_docs/cmdref/network/public-ip/create.html#cmdoption-lifetime
+
+#    public_ip_id=$(oci network public-ip create --compartment-id $compartment_id --lifetime $lifetime --query data.id --raw-output)
+
+#    oci network public-ip update --public-ip-id $public_ip_id
+}
+
 CONFIG=~/.oci/config
 INPUT_PROFILE=$1; shift;
 INPUT_COMMAND=$1; shift;
@@ -106,4 +115,7 @@ done
 if [ "$RESULT" == "1" ]; then
 	exit 1
 fi
+
+# TODO: multi, single command? oci-multi-???
+# TODO: dry-run option?
 
