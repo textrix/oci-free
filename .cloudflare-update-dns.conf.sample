@@ -1,4 +1,5 @@
 
+DOMAIN=somewhere.com
 AUTH_EMAIL=example@example.com
 API_KEY=CF_Authorization_key
 ZONE_ID=CF_Zone_ID
