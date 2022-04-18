@@ -31,3 +31,5 @@ curl -s "https://api.cloudflare.com/client/v4/zones/$ZONE_ID/dns_records/$A_RECO
      -H "X-Auth-Email: $AUTH_EMAIL" \
      -H "Authorization: Bearer $API_KEY" \
      -d "$RECORD"
+
+# TODO: create record if not exist
