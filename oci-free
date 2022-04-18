@@ -1,6 +1,8 @@
 #!/bin/bash
 
-#DEBUG=true
+set -o noglob
+
+DEBUG=true
 #VERBOSE=true
 
 function ini_get_sections {
@@ -43,14 +45,14 @@ function oci-help {
 function oci-instance-list {
 	local PROFILE=$1; local TID=$2
 	local CMD="oci --profile $PROFILE compute instance list -c $TID --all | jq -r '.data[] | \"$PROFILE,\" + .\"display-name\" + \",\" + .id'"
-	[ $VERBOSE ] && echo $CMD >&2;
+	[ $VERBOSE ] && echo $CMD >&2
 	eval $CMD 
 }
 
 function oci-ip-list {
 	local PROFILE=$1; local TID=$2; local INPUT_INAME=$3
 	[ -z $INPUT_INAME ] && INPUT_INAME='.'
-	readarray -t IID_ARRAY <<<"$(oci-instance-list $PROFILE $TID)"; [ $DEBUG ] && declare -p IID_ARRAY
+	readarray -t IID_ARRAY <<<"$(oci-instance-list $PROFILE $TID)"; [ $DEBUG ] && declare -p IID_ARRAY >&2
 	for line in ${IID_ARRAY[@]}; do
 		local INAME=$(echo $line | awk -F, '{print $2}')
 		local IID=$(echo $line | awk -F, '{print $3}')
@@ -66,12 +68,17 @@ CONFIG=~/.oci/config
 INPUT_PROFILE=$1; shift;
 INPUT_COMMAND=$1; shift;
 
+echo $INPUT_PROFILE
+
 [ -z $CONFIG ] && exit # TODO: error message
 
-declare -a PROFILE_ARRAY="$(ini_get_sections $CONFIG)"; [ $DEBUG ] && declare -p PROFILE_ARRAY;
+declare -a PROFILE_ARRAY="$(ini_get_sections $CONFIG)"; [ $DEBUG ] && declare -p PROFILE_ARRAY; >&2
 
 for PROFILE in ${PROFILE_ARRAY[@]}; do
-	if echo $PROFILE | grep -q -w $INPUT_PROFILE ; then
+	[ "$PROFILE" == "DEFAULT" ] || [ "$PROFILE" == ".oci-free" ] && continue
+
+	[ $DEBUG ] && echo "main loop: [$PROFILE]" >&2
+	if echo $PROFILE | grep -q  $INPUT_PROFILE; then
 		[ $VERBOSE ] && echo [$PROFILE] >&2
 		TID=$(get_TID $PROFILE)
 		eval "oci-$INPUT_COMMAND $PROFILE $TID $@"
