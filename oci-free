@@ -57,7 +57,7 @@ function _oci-ip {
 	local PROFILE=$1; local TID=$2; local IID=$3
 	local CMD="oci --profile $PROFILE compute instance list-vnics -c $TID --instance-id $IID | jq -r '.data[] | .\"public-ip\"'"
 	[ $VERBOSE ] && echo $CMD >&2;
-	echo $PROFILE,$INAME,$(eval $CMD)
+	echo A $INAME $(eval $CMD)
 }
 
 function oci-ip-list {
@@ -90,7 +90,7 @@ function _oci-ipv6 {
 		# TODO: verbose
 		RESULT=$(oci --profile $PROFILE network vnic assign-ipv6 --vnic-id $VNIC_ID | jq -r '.data."ip-address"')
 	fi
-	echo $PROFILE,$INAME,$RESULT
+	echo AAAA $INAME $RESULT
 
 }
 
