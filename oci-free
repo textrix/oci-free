@@ -53,6 +53,7 @@ function oci-instance-list {
 }
 
 function _oci-ip {
+	# TODO: remove unnecessary arguments
 	local PROFILE=$1; local TID=$2; local IID=$3
 	local CMD="oci --profile $PROFILE compute instance list-vnics -c $TID --instance-id $IID | jq -r '.data[] | .\"public-ip\"'"
 	[ $VERBOSE ] && echo $CMD >&2;
@@ -69,7 +70,7 @@ function oci-ip-list {
 		local INAME=$(echo $line | awk -F, '{print $2}')
 		local IID=$(echo $line | awk -F, '{print $3}')
 		if echo $INAME | grep -q $INPUT_INAME; then
-			eval "_oci-ip $PROFILE $TID $IID" &
+			_oci-ip $PROFILE $TID $IID &
 			SUB_PIDS="$SUB_PIDS $!"
 		fi 
 	done
@@ -80,11 +81,13 @@ function oci-ip-list {
 }
 
 function _oci-ipv6 {
+	# TODO: remove unnecessary arguments
 	local PROFILE=$1; local TID=$2; local IID=$3; local VNIC_ID=$4; local SUBNET_ID=$5
 	local CMD="oci --profile $PROFILE network ipv6 list --vnic-id $VNIC_ID --subnet-id $SUBNET_ID | jq -r '.data[] | .\"ip-address\"'"
 	[ $VERBOSE ] && echo $CMD >&2;
 	local RESULT=$(eval $CMD)
 	if [ -z $RESULT ]; then
+		# TODO: verbose
 		RESULT=$(oci --profile $PROFILE network vnic assign-ipv6 --vnic-id $VNIC_ID | jq -r '.data."ip-address"')
 	fi
 	echo $PROFILE,$INAME,$RESULT
@@ -101,11 +104,12 @@ function oci-ipv6-list {
 		[ $DEBUG ] && echo "$FUNCNAME: $line" >&2
 		local INAME=$(echo $line | awk -F, '{print $2}')
 		local IID=$(echo $line | awk -F, '{print $3}')
+		# TODO: verbose
 		local VNIC_DATA=$(eval "oci --profile $PROFILE compute instance list-vnics -c $TID --instance-id $IID")
 		local VNIC_ID=$(echo $VNIC_DATA | jq -r '.data[] | .id')
 		local SUBNET_ID=$(echo $VNIC_DATA | jq -r '.data[] | ."subnet-id"')
 		if echo $INAME | grep -q $INPUT_INAME; then
-			eval "_oci-ipv6 $PROFILE $TID $IID $VNIC_ID $SUBNET_ID" &
+			_oci-ipv6 $PROFILE $TID $IID $VNIC_ID $SUBNET_ID &
 			SUB_PIDS="$SUB_PIDS $!"
 		fi 
 	done
